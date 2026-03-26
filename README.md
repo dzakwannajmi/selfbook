@@ -3,6 +3,10 @@
 A smart contract-based booking system built on Soroban (Stellar).
 This project demonstrates how users can create, manage, and complete booking transactions in a trustless, on-chain environment.
 
+It introduces a full booking lifecycle—from slot creation, booking, to completion—while ensuring transparency, security, and immutability through blockchain technology. Each interaction is authenticated and recorded on-chain, allowing users to interact without relying on a centralized authority.
+
+The system is designed as a simplified real-world use case to showcase how decentralized applications (dApps) can handle user interactions, state transitions, and data persistence efficiently within the Stellar ecosystem.
+
 ---
 
 ## Overview

@@ -1,7 +1,7 @@
 # SelfBook Soroban
 
-A simple smart contract-based booking system built on Soroban (Stellar).
-This project demonstrates how users can create booking slots and allow others to reserve them in a trustless, on-chain environment.
+A smart contract-based booking system built on Soroban (Stellar).
+This project demonstrates how users can create, manage, and complete booking transactions in a trustless, on-chain environment.
 
 ---
 
@@ -11,15 +11,49 @@ SelfBook is a decentralized booking system where:
 
 * A user (owner) can create booking slots with a defined price
 * Other users can book available slots
-* Bookings are stored and managed on-chain
-* Users can cancel their bookings securely
+* Owners can complete bookings
+* Booking lifecycle is stored and managed on-chain
+* Each action is recorded with timestamps
 
 This project showcases core blockchain concepts such as:
 
 * State management
 * Authentication
 * On-chain data storage
-* Event logging
+* Event-driven logic
+* Transaction lifecycle handling
+
+---
+
+## Project Structure
+
+```
+selfbook-soroban/
+├── contracts/
+│   └── notes/
+│
+├── src/
+│   ├── lib.rs        # Main smart contract logic
+│   └── test.rs       # Unit tests
+│
+├── target/           # Build output (auto-generated)
+│
+├── Cargo.toml        # Project configuration (Rust)
+├── Cargo.lock        # Dependency lock file
+├── Makefile          # Build and automation commands
+├── .gitignore        # Ignored files for Git
+├── README.md         # Project documentation
+└── stellar-expert.png & stellar lab.png    # Demo UI / CLI result
+```
+
+### Description
+
+* `src/lib.rs` → Main smart contract implementation
+* `src/test.rs` → Unit testing for contract functions
+* `contracts/notes/` → Additional contract-related modules (if any)
+* `target/` → Compiled WASM output
+* `Cargo.toml` → Rust project configuration
+* `Makefile` → Simplifies build and deployment commands
 
 ---
 
@@ -27,11 +61,13 @@ This project showcases core blockchain concepts such as:
 
 * Create booking slots
 * Book available slots
-* Cancel bookings (by the booker only)
+* Complete booking (by owner)
 * Retrieve all booking slots
+* Retrieve slots by owner
+* Booking lifecycle management (available → booked → completed)
+* Timestamp tracking (created & booked time)
 * Input validation (price, ownership, slot index)
 * Maximum slot limit per contract
-* Event logging for all actions
 
 ---
 
@@ -44,7 +80,9 @@ Booking {
   owner: Address,
   booker: Option<Address>,
   price: i128,
-  booked: bool
+  status: u32,        // 0 = available, 1 = booked, 2 = completed
+  created_at: u64,
+  booked_at: Option<u64>
 }
 ```
 
@@ -68,22 +106,29 @@ Book an available slot.
 
 * Requires authentication
 * Cannot book own slot
-* Fails if already booked
+* Only available slots can be booked
+* Records booking timestamp
 
 ---
 
-### `cancel_booking(user, index)`
+### `complete_booking(owner, index)`
 
-Cancel an existing booking.
+Mark a booking as completed.
 
-* Only the booker can cancel
-* Slot must be booked
+* Only the owner can complete
+* Slot must be in booked state
 
 ---
 
 ### `get_slots()`
 
 Retrieve all booking slots.
+
+---
+
+### `get_slots_by_owner(owner)`
+
+Retrieve all slots created by a specific owner.
 
 ---
 
@@ -100,8 +145,8 @@ cargo build --target wasm32-unknown-unknown --release
 ### 2. Generate Test Accounts
 
 ```bash
-stellar keys generate najmi --network testnet --fund
 stellar keys generate user1 --network testnet --fund
+stellar keys generate user2 --network testnet --fund
 ```
 
 ---
@@ -136,7 +181,7 @@ soroban contract invoke \
 
 ---
 
-### Get Slots
+### Get All Slots
 
 ```bash
 soroban contract invoke \
@@ -163,17 +208,30 @@ soroban contract invoke \
 
 ---
 
-### Cancel Booking
+### Complete Booking
 
 ```bash
 soroban contract invoke \
   --id <CONTRACT_ID> \
-  --source user1 \
+  --source najmi \
   --network testnet \
   -- \
-  cancel_booking \
-  --user user1 \
+  complete_booking \
+  --owner najmi \
   --index 0
+```
+
+---
+
+### Get Slots by Owner
+
+```bash
+soroban contract invoke \
+  --id <CONTRACT_ID> \
+  --network testnet \
+  -- \
+  get_slots_by_owner \
+  --owner najmi
 ```
 
 ---
@@ -181,11 +239,11 @@ soroban contract invoke \
 ## Demo Flow
 
 1. Owner creates a slot
-2. Retrieve slots (status: not booked)
+2. Retrieve slots (status: available)
 3. Another user books the slot
 4. Retrieve slots (status: booked)
-5. User cancels booking
-6. Retrieve slots (status: available again)
+5. Owner completes the booking
+6. Retrieve slots (status: completed)
 
 ---
 
@@ -194,8 +252,8 @@ soroban contract invoke \
 * Smart contract development using Rust
 * Soroban storage system
 * Address-based authentication (`require_auth`)
-* On-chain state updates
-* Event-driven architecture
+* On-chain state lifecycle (multi-state transitions)
+* Timestamp-based activity tracking
 
 ---
 
@@ -203,7 +261,7 @@ soroban contract invoke \
 
 * This project uses simulated pricing (no real token transfer)
 * Designed for learning and demonstration purposes
-* Optimized for simplicity and clarity
+* Focused on clarity and real-world booking logic
 
 ---
 

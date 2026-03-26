@@ -11,7 +11,9 @@ pub struct Booking {
     pub owner: Address,
     pub booker: Option<Address>,
     pub price: i128,
-    pub booked: bool,
+    pub status: u32, // 0 = available, 1 = booked, 2 = completed
+    pub created_at: u64,
+    pub booked_at: Option<u64>,
 }
 
 #[contract]
@@ -22,7 +24,7 @@ impl SelfBookContract {
 
     const MAX_SLOTS: u32 = 20;
 
-    // Create booking slot
+    // Create slot
     pub fn create_slot(env: Env, owner: Address, price: i128) {
         owner.require_auth();
 
@@ -44,7 +46,9 @@ impl SelfBookContract {
             owner: owner.clone(),
             booker: None,
             price,
-            booked: false,
+            status: 0,
+            created_at: env.ledger().timestamp(),
+            booked_at: None,
         };
 
         slots.push_back(booking);
@@ -52,14 +56,9 @@ impl SelfBookContract {
         env.storage()
             .instance()
             .set(&symbol_short!("slots"), &slots);
-
-        env.events().publish(
-            (symbol_short!("create"), owner),
-            price
-        );
     }
 
-    // Book a slot
+    // Book slot
     pub fn book_slot(env: Env, user: Address, index: u32) {
         user.require_auth();
 
@@ -75,32 +74,28 @@ impl SelfBookContract {
 
         let mut slot = slots.get(index).unwrap();
 
-        if slot.booked {
-            panic!("Already booked");
+        if slot.status != 0 {
+            panic!("Slot not available");
         }
 
         if slot.owner == user {
             panic!("Owner cannot book own slot");
         }
 
-        slot.booked = true;
+        slot.status = 1;
         slot.booker = Some(user.clone());
+        slot.booked_at = Some(env.ledger().timestamp());
 
-        slots.set(index, slot.clone());
+        slots.set(index, slot);
 
         env.storage()
             .instance()
             .set(&symbol_short!("slots"), &slots);
-
-        env.events().publish(
-            (symbol_short!("book"), user),
-            index
-        );
     }
 
-    // Cancel booking (only booker)
-    pub fn cancel_booking(env: Env, user: Address, index: u32) {
-        user.require_auth();
+    // Complete booking (only owner)
+    pub fn complete_booking(env: Env, owner: Address, index: u32) {
+        owner.require_auth();
 
         let mut slots: Vec<Booking> =
             env.storage()
@@ -114,27 +109,21 @@ impl SelfBookContract {
 
         let mut slot = slots.get(index).unwrap();
 
-        if !slot.booked {
+        if slot.owner != owner {
+            panic!("Not owner");
+        }
+
+        if slot.status != 1 {
             panic!("Slot not booked");
         }
 
-        if slot.booker != Some(user.clone()) {
-            panic!("Not authorized");
-        }
+        slot.status = 2;
 
-        slot.booked = false;
-        slot.booker = None;
-
-        slots.set(index, slot.clone());
+        slots.set(index, slot);
 
         env.storage()
             .instance()
             .set(&symbol_short!("slots"), &slots);
-
-        env.events().publish(
-            (symbol_short!("cancel"), user),
-            index
-        );
     }
 
     // Get all slots
@@ -143,5 +132,24 @@ impl SelfBookContract {
             .instance()
             .get(&symbol_short!("slots"))
             .unwrap_or(Vec::new(&env))
+    }
+
+    // Get slots by owner
+    pub fn get_slots_by_owner(env: Env, owner: Address) -> Vec<Booking> {
+        let slots: Vec<Booking> =
+            env.storage()
+                .instance()
+                .get(&symbol_short!("slots"))
+                .unwrap_or(Vec::new(&env));
+
+        let mut result = Vec::new(&env);
+
+        for slot in slots.iter() {
+            if slot.owner == owner {
+                result.push_back(slot);
+            }
+        }
+
+        result
     }
 }

@@ -2,7 +2,6 @@
 
 <img width="1919" height="870" alt="Screenshot 2026-03-26 224011" src="https://github.com/user-attachments/assets/c6ce1e3d-6688-4b93-be74-fcc0aa3c6b62" />
 
-
 A simple smart contract-based booking system built on Soroban (Stellar).
 This project demonstrates how users can create booking slots and allow others to reserve them in a trustless, on-chain environment.
 

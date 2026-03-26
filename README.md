@@ -1,4 +1,4 @@
-# SelfBook Soroban
+# rumy
 
 <img width="1919" height="870" alt="Screenshot 2026-03-26 224011" src="https://github.com/user-attachments/assets/c6ce1e3d-6688-4b93-be74-fcc0aa3c6b62" />
 
@@ -13,7 +13,7 @@ The system is designed as a simplified real-world use case to showcase how decen
 
 ## Overview
 
-SelfBook is a decentralized booking system where:
+rumy is a decentralized booking system where:
 
 * A user (owner) can create booking slots with a defined price
 * Other users can book available slots
@@ -34,7 +34,7 @@ This project showcases core blockchain concepts such as:
 ## Project Structure
 
 ```
-selfbook-soroban/
+rumy/
 ├── contracts/
 │   └── notes/
 │
@@ -161,7 +161,7 @@ stellar keys generate user2 --network testnet --fund
 
 ```bash
 soroban contract deploy \
-  --wasm target/wasm32-unknown-unknown/release/selfbook_soroban.wasm \
+  --wasm target/wasm32-unknown-unknown/release/rumy.wasm \
   --source najmi \
   --network testnet
 ```
